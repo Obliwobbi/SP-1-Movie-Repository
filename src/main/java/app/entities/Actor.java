@@ -21,6 +21,9 @@ public class Actor
     @Column(nullable = false)
     private Long apiId;
 
+    @Column(nullable = false)
+    private String name;
+
     @ManyToMany(mappedBy = "actors")
     private Set<Movie> movies;
 }
