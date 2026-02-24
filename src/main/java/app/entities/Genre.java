@@ -18,9 +18,15 @@ public class Genre
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long dbId;
 
+    @Column(nullable = false, unique = true)
+    private long apiId;
+
     @Column(nullable = false)
     private String name;
 
-    @ManyToMany(mappedBy = "genres")
-    private Set<Movie> movies;
+    public Genre(long apiId, String name)
+    {
+        this.apiId = apiId;
+        this.name = name;
+    }
 }
