@@ -3,10 +3,13 @@ package app;
 import app.config.HibernateConfig;
 import app.daos.MovieDAO;
 import app.dto.*;
+import app.entities.Movie;
 import app.services.MovieService;
 import app.utils.APIReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
+
+import java.util.List;
 
 public class Main
 {
@@ -20,8 +23,32 @@ public class Main
         MovieDAO movieDAO = new MovieDAO(emf);
         MovieService ms = new MovieService(apiReader, movieDAO);
 
-//        ms.saveMovieData();
+        System.out.println("Top Ten");
+        List<Movie> topTenRated = ms.getTopRated();
+        topTenRated.forEach(movie -> System.out.println(movie.getTitle()));
+        System.out.println();
 
+        System.out.println("Lowest ten");
+        List<Movie> lowestTenRated = ms.getLowestRated();
+        lowestTenRated.forEach(movie -> System.out.println(movie.getTitle()));
+        System.out.println();
+
+        System.out.println("Most popular");
+        List<Movie> mostPopular = ms.getMostPopular();
+        mostPopular.forEach(movie -> System.out.println(movie.getTitle()));
+        System.out.println();
+
+        System.out.println("Average rating: "+ms.getAvgRating());
+
+        System.out.println("Get by genre: action");
+        List<Movie> byGenreAction = ms.getByGenre("action");
+        byGenreAction.forEach(movie -> System.out.println(movie.getTitle()));
+        System.out.println();
+
+        System.out.println("Get by title: thomas");
+        List<Movie> byTitleThomas = ms.getByTitle("thomas");
+        byTitleThomas.forEach(movie -> System.out.println(movie.getTitle()));
+        System.out.println();
 
     }
 }
