@@ -1,145 +1,67 @@
 package app.daos;
 
-import app.daos.interfaces.IDAO;
 import app.daos.interfaces.IMovieDAO;
+import app.entities.Actor;
+import app.entities.Director;
+import app.entities.Genre;
 import app.entities.Movie;
-import app.exceptions.DatabaseErrorType;
-import app.exceptions.DatabaseException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceException;
-import jakarta.persistence.TypedQuery;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
-public class MovieDAO implements IDAO<Movie>, IMovieDAO
+public class MovieDAO extends DAO<Movie> implements IMovieDAO
 {
-    private final EntityManagerFactory emf;
-
-    public MovieDAO(EntityManagerFactory emf){this.emf = emf;}
-    @Override
-    public Movie create(Movie user)
+    public MovieDAO(EntityManagerFactory emf)
     {
-        if (user == null)
-        {
-            throw new IllegalArgumentException("Movie cant be null");
-        }
+        super(emf, Movie.class);
+    }
 
+    public Movie createAndMerge(Movie movie)
+    {
         try (EntityManager em = emf.createEntityManager())
         {
             em.getTransaction().begin();
 
-            try
+            Set<Genre> resolvedGenres = new HashSet<>();
+            for (Genre genre : movie.getGenres())
             {
-                em.persist(user);
-                em.getTransaction().commit();
-                return user;
+                resolvedGenres.add(findOrPersist(em, Genre.class, "apiId", genre.getApiId(), genre));
             }
-            catch (PersistenceException e)
+
+            Set<Actor> resolvedActors = new HashSet<>();
+            for (Actor actor : movie.getActors())
             {
-                if (em.getTransaction().isActive())
-                {
-                    em.getTransaction().rollback();
-                }
-                throw new DatabaseException("Create Movie failed", DatabaseErrorType.TRANSACTION_FAILURE, e);
+                resolvedActors.add(findOrPersist(em, Actor.class, "apiId", actor.getApiId(), actor));
             }
-            catch (RuntimeException e)
+
+            if (movie.getDirector() != null)
             {
-                if (em.getTransaction().isActive())
-                {
-                    em.getTransaction().rollback();
-                }
-                throw new DatabaseException("Create Movie failed", DatabaseErrorType.UNKNOWN, e);
+                Director d = movie.getDirector();
+                Director resolved = findOrPersist(em, Director.class, "apiId", d.getApiId(), d);
+                movie.setDirector(resolved);
             }
+
+            movie.setActors(resolvedActors);
+            movie.setGenres(resolvedGenres);
+
+            em.persist(movie);
+            em.getTransaction().commit();
+            return movie;
         }
     }
 
-    @Override
-    public Movie get(Integer id)
+    private <T> T findOrPersist(EntityManager em, Class<T> clazz, String field, Object value, T newEntity)
     {
-        if (id == null)
-        {
-            throw new IllegalArgumentException("Movie id is required");
-        }
-
-        try (EntityManager em = emf.createEntityManager())
-        {
-            Movie user = em.find(Movie.class, id);
-            if (user != null)
-            {
-                return user;
-            }
-            throw new DatabaseException("Movie not found", DatabaseErrorType.NOT_FOUND);
-        }
-        catch (PersistenceException e)
-        {
-            throw new DatabaseException("Get Movie failed", DatabaseErrorType.QUERY_FAILURE, e);
-        }
-    }
-
-    @Override
-    public List<Movie> getAll()
-    {
-        try (EntityManager em = emf.createEntityManager())
-        {
-            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m", Movie.class);
-            return query.getResultList();
-        }
-        catch (PersistenceException e)
-        {
-            throw new DatabaseException("Get movies failed", DatabaseErrorType.QUERY_FAILURE, e);
-        }
-    }
-
-
-    @Override
-    public Movie update(Movie m)
-    {
-        if (m == null || m.getDbId() == null)
-        {
-            throw new IllegalArgumentException("Movie and movie id are required");
-        }
-
-        try (EntityManager em = emf.createEntityManager())
-        {
-            em.getTransaction().begin();
-
-            try
-            {
-                Movie managed = em.find(Movie.class, m.getDbId());
-                if (managed == null)
+        return em.createQuery("SELECT e FROM " + clazz.getSimpleName() + " e WHERE e." + field + " = :val", clazz)
+                .setParameter("val", value)
+                .getResultStream()
+                .findFirst()
+                .orElseGet(() ->
                 {
-                    if (em.getTransaction().isActive())
-                    {
-                        em.getTransaction().rollback();
-                    }
-                    throw new DatabaseException("User not found or invalid", DatabaseErrorType.NOT_FOUND);
-                }
-
-                managed = em.merge(m);
-                em.getTransaction().commit();
-                return managed;
-            }
-            catch (DatabaseException e)
-            {
-                throw e;
-            }
-            catch (PersistenceException e)
-            {
-                if (em.getTransaction().isActive())
-                {
-                    em.getTransaction().rollback();
-                }
-                throw new DatabaseException("Update User failed", DatabaseErrorType.TRANSACTION_FAILURE, e);
-            }
-            catch (RuntimeException e)
-            {
-                if (em.getTransaction().isActive())
-                {
-                    em.getTransaction().rollback();
-                }
-                throw new DatabaseException("Update User failed", DatabaseErrorType.UNKNOWN, e);
-            }
-        }
+                    em.persist(newEntity);
+                    return newEntity;
+                });
     }
 }
