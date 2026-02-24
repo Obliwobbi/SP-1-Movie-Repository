@@ -40,7 +40,7 @@ public class Movie
     private Set<Actor> actors;
 
     //Mange til mange (join table) - Movie owns this side
-    @ManyToMany()
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "movie_genre",
             joinColumns = @JoinColumn(name = "movie_dbId"),
