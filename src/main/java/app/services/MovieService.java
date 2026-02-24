@@ -34,7 +34,27 @@ public class MovieService
         return movieDAO.getByTitle(query);
     }
 
-    public void saveMovieData()
+    public List<Movie> getTopRated()
+    {
+        return movieDAO.getTopRated(10);
+    }
+
+    public List<Movie> getLowestRated()
+    {
+        return movieDAO.getLowestRated(10);
+    }
+
+    public List<Movie> getMostPopular()
+    {
+        return movieDAO.getMostPopular(10);
+    }
+
+    public Double getAvgRating()
+    {
+        return movieDAO.getAverageRating();
+    }
+
+    public void fetchAndSaveToDB()
     {
         List<MovieDTO> results = getMovieIds();
 
