@@ -1,28 +1,32 @@
 package app.services;
 
 import app.MovieListDTO;
-import app.dto.MovieDTO;
-import app.dto.MovieDetailsDTO;
+import app.daos.MovieDAO;
+import app.dto.*;
+import app.entities.Actor;
+import app.entities.Director;
+import app.entities.Genre;
+import app.entities.Movie;
 import app.utils.APIReader;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.time.LocalDate;
+import java.util.*;
 
 public class MovieService
 {
     private final APIReader apiReader;
+    private final MovieDAO movieDAO;
     private final static String API_KEY = System.getenv("API_KEY");
 
-    public MovieService(APIReader apiReader)
+    public MovieService(APIReader apiReader, MovieDAO movieDAO)
     {
         this.apiReader = apiReader;
+        this.movieDAO = movieDAO;
     }
 
     public MovieDetailsDTO getMovieDetails(Long id)
     {
         String endpointDetails = "https://api.themoviedb.org/3/movie/%d?append_to_response=credits&language=en-US&api_key=%s";
-        System.out.println(API_KEY);
         String endpoint = String.format(Locale.US, endpointDetails, id, API_KEY);
         return apiReader.getAndConvertData(endpoint, MovieDetailsDTO.class);
     }
