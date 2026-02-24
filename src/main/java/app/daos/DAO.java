@@ -117,6 +117,7 @@ public class DAO<T> implements IDAO<T>
         }
     }
 
+    @Override
     public void delete(Integer id)
     {
         T entity = get(id);
