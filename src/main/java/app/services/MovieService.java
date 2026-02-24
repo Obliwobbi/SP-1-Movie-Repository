@@ -24,10 +24,20 @@ public class MovieService
         this.movieDAO = movieDAO;
     }
 
+    public List<Movie> getByGenre(String genre)
+    {
+        return movieDAO.getByGenre(genre);
+    }
+
+    public List<Movie> getByTitle(String query)
+    {
+        return movieDAO.getByTitle(query);
+    }
+
     public void saveMovieData()
     {
         List<MovieDTO> results = getMovieIds();
-        int i = 0;
+
         for (MovieDTO m : results)
         {
             {
@@ -75,8 +85,6 @@ public class MovieService
                 Movie movie = new Movie(apiId, title, director, rating, releaseDate, popularity, genreSet, actorSet);
 
                 movieDAO.createAndMerge(movie);
-                System.out.println(i);
-                i++;
             }
         }
     }
