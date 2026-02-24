@@ -8,7 +8,7 @@ public interface IMovieDAO
 {
     List<Movie> getByGenre(String genre);
     List<Movie> getByTitle(String query);
-    List<Movie> getAverageRating();
+    double getAverageRating();
     List<Movie> getTopRated(int limit);
     List<Movie> getLowestRated(int limit);
     List<Movie> getMostPopular(int limit);

@@ -7,10 +7,7 @@ import app.entities.Genre;
 import app.entities.Movie;
 import app.exceptions.DatabaseErrorType;
 import app.exceptions.DatabaseException;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.PersistenceException;
-import jakarta.persistence.TypedQuery;
+import jakarta.persistence.*;
 
 import java.util.HashSet;
 import java.util.List;
@@ -124,26 +121,57 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
     }
 
     @Override
-    public List<Movie> getAverageRating()
+    public double getAverageRating()
     {
-        return List.of();
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Double> query = em.createQuery("SELECT AVG(m.rating) FROM Movie m", Double.class);
+            return query.getSingleResult();
+        }
     }
 
     @Override
     public List<Movie> getTopRated(int limit)
     {
-        return List.of();
+        if (limit <= 0)
+        {
+            throw new IllegalArgumentException("Input needs to be bigger than 0");
+        }
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m ORDER BY m.rating DESC", Movie.class)
+                    .setMaxResults(limit);
+            return query.getResultList();
+        }
     }
 
     @Override
     public List<Movie> getLowestRated(int limit)
     {
-        return List.of();
+        if (limit <= 0)
+        {
+            throw new IllegalArgumentException("Input needs to be bigger than 0");
+        }
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m ORDER BY m.rating ASC", Movie.class)
+                    .setMaxResults(limit);
+            return query.getResultList();
+        }
     }
 
     @Override
     public List<Movie> getMostPopular(int limit)
     {
-        return List.of();
+        if (limit <= 0)
+        {
+            throw new IllegalArgumentException("Input needs to be bigger than 0");
+        }
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m ORDER BY m.popularity DESC", Movie.class)
+                    .setMaxResults(limit);
+            return query.getResultList();
+        }
     }
 }
