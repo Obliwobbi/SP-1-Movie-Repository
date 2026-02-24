@@ -1,4 +1,4 @@
-package app.config;
+package app.persistence.config;
 
 import app.utils.Utils;
 import jakarta.persistence.EntityManagerFactory;
@@ -34,7 +34,7 @@ public final class HibernateConfig
         Properties props = HibernateBaseProperties.createBase();
 
         // Teaching-friendly default - change to update in production
-        props.put("hibernate.hbm2ddl.auto", "create");
+        props.put("hibernate.hbm2ddl.auto", "update");
 
         if (System.getenv("DEPLOYED") != null)
         {

@@ -1,28 +1,117 @@
 package app.services;
 
 import app.MovieListDTO;
-import app.dto.MovieDTO;
-import app.dto.MovieDetailsDTO;
+import app.persistence.daos.MovieDAO;
+import app.dto.*;
+import app.entities.Actor;
+import app.entities.Director;
+import app.entities.Genre;
+import app.entities.Movie;
 import app.utils.APIReader;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.time.LocalDate;
+import java.util.*;
 
 public class MovieService
 {
     private final APIReader apiReader;
+    private final MovieDAO movieDAO;
     private final static String API_KEY = System.getenv("API_KEY");
 
-    public MovieService(APIReader apiReader)
+    public MovieService(APIReader apiReader, MovieDAO movieDAO)
     {
         this.apiReader = apiReader;
+        this.movieDAO = movieDAO;
+    }
+
+    public List<Movie> getByGenre(String genre)
+    {
+        return movieDAO.getByGenre(genre);
+    }
+
+    public List<Movie> getByTitle(String query)
+    {
+        return movieDAO.getByTitle(query);
+    }
+
+    public List<Movie> getTopRated()
+    {
+        return movieDAO.getTopRated(10);
+    }
+
+    public List<Movie> getLowestRated()
+    {
+        return movieDAO.getLowestRated(10);
+    }
+
+    public List<Movie> getMostPopular()
+    {
+        return movieDAO.getMostPopular(10);
+    }
+
+    public Double getAvgRating()
+    {
+        return movieDAO.getAverageRating();
+    }
+
+    public void fetchAndSaveToDB()
+    {
+        List<MovieDTO> results = getMovieIds();
+
+        for (MovieDTO m : results)
+        {
+            {
+                MovieDetailsDTO details = getMovieDetails(m.getId());
+
+                Long apiId = details.getId();
+                String title = details.getTitle();
+                String description = details.getOverview();
+                LocalDate releaseDate = details.getReleaseDate();
+                double rating = details.getRating();
+                double popularity = details.getPopularity();
+
+                CrewDTO directorOne = details.getCredits().getCrewDTOList().stream().filter(c -> c.getJob().equals("Director")).findFirst().orElse(null);
+
+                Director director;
+                if (directorOne != null)
+                {
+                    director = new Director(directorOne.getId(), directorOne.getName());
+                }
+                else
+                {
+                    director = new Director((long) -1, "No Director Credited");
+                }
+
+                List<GenreDTO> genres = details.getGenres();
+                Set<Genre> genreSet = new HashSet<>();
+
+                for (GenreDTO g : genres)
+                {
+                    Genre g1 = new Genre(g.getId(), g.getName());
+                    genreSet.add(g1);
+                }
+
+                List<ActorDTO> actors = details.getCredits().getCastDTOList();
+                Set<Actor> actorSet = new HashSet<>();
+
+                for (ActorDTO a : actors)
+                {
+                    actorSet.add(Actor.builder()
+                            .apiId(a.getId())
+                            .name(a.getName())
+                            .build());
+                }
+
+                Movie movie = new Movie(apiId, title, director, rating, releaseDate, popularity, genreSet, actorSet);
+
+                movieDAO.createAndMerge(movie);
+            }
+        }
     }
 
     public MovieDetailsDTO getMovieDetails(Long id)
     {
         String endpointDetails = "https://api.themoviedb.org/3/movie/%d?append_to_response=credits&language=en-US&api_key=%s";
-        System.out.println(API_KEY);
         String endpoint = String.format(Locale.US, endpointDetails, id, API_KEY);
         return apiReader.getAndConvertData(endpoint, MovieDetailsDTO.class);
     }

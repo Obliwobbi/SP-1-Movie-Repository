@@ -30,8 +30,8 @@ public class Movie
     @JoinColumn(name = "director_dbId")
     private Director director;
 
-    //Mange til mange (join table)
-    @ManyToMany(mappedBy = "movies")
+    //Mange til mange (join table) - Movie owns this side
+    @ManyToMany()
     @JoinTable(
             name = "movie_actor",
             joinColumns = @JoinColumn(name = "movie_dbId"),
@@ -39,8 +39,8 @@ public class Movie
     )
     private Set<Actor> actors;
 
-    //Mange til mange (join table)
-    @ManyToMany(mappedBy = "movies")
+    //Mange til mange (join table) - Movie owns this side
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "movie_genre",
             joinColumns = @JoinColumn(name = "movie_dbId"),
@@ -49,39 +49,24 @@ public class Movie
     private Set<Genre> genres;
 
     @Column(nullable = false)
+    private double popularity;
+
+    @Column(nullable = false)
     private Double rating;
 
     @Column(nullable = false)
     private LocalDate releaseDate;
 
-    public void addActor(Actor actor)
-    {
-        actors.add(actor);
-        actor.getMovies().add(this);
-    }
 
-    public void removeActor(Actor actor)
+    public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<Actor> actors)
     {
-        actors.remove(actor);
-        actor.getMovies().remove(this);
-    }
-
-    public void addGenre(Genre genre)
-    {
-        genres.add(genre);
-        genre.getMovies().add(this);
-    }
-
-    public void removeGenre(Genre genre)
-    {
-        genres.remove(genre);
-        genre.getMovies().remove(this);
-    }
-
-    public void setDirector(Director director)
-    {
+        this.apiId = apiId;
+        this.title = title;
         this.director = director;
-        director.getMovies().add(this);
+        this.rating = rating;
+        this.releaseDate = releaseDate;
+        this.genres = genres;
+        this.actors = actors;
+        this.popularity = popularity;
     }
-
 }
