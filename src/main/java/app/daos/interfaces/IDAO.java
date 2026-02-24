@@ -11,4 +11,6 @@ public interface IDAO<T>
     List<T> getAll();
 
     T update(T t);
+
+    void delete(Integer id);
 }
