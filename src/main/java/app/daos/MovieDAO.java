@@ -5,10 +5,15 @@ import app.entities.Actor;
 import app.entities.Director;
 import app.entities.Genre;
 import app.entities.Movie;
+import app.exceptions.DatabaseErrorType;
+import app.exceptions.DatabaseException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.PersistenceException;
+import jakarta.persistence.TypedQuery;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class MovieDAO extends DAO<Movie> implements IMovieDAO
@@ -23,45 +28,122 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
         try (EntityManager em = emf.createEntityManager())
         {
             em.getTransaction().begin();
-
-            Set<Genre> resolvedGenres = new HashSet<>();
-            for (Genre genre : movie.getGenres())
+            try
             {
-                resolvedGenres.add(findOrPersist(em, Genre.class, "apiId", genre.getApiId(), genre));
-            }
+                Set<Genre> resolvedGenres = new HashSet<>();
+                for (Genre genre : movie.getGenres())
+                {
+                    resolvedGenres.add(findOrPersistOnApiId(em, Genre.class, genre.getApiId(), genre));
+                }
 
-            Set<Actor> resolvedActors = new HashSet<>();
-            for (Actor actor : movie.getActors())
+                Set<Actor> resolvedActors = new HashSet<>();
+                for (Actor actor : movie.getActors())
+                {
+                    resolvedActors.add(findOrPersistOnApiId(em, Actor.class, actor.getApiId(), actor));
+                }
+
+                if (movie.getDirector() != null)
+                {
+                    Director d = movie.getDirector();
+                    Director resolved = findOrPersistOnApiId(em, Director.class, d.getApiId(), d);
+                    movie.setDirector(resolved);
+                }
+
+                movie.setActors(resolvedActors);
+                movie.setGenres(resolvedGenres);
+
+                em.persist(movie);
+                em.getTransaction().commit();
+                return movie;
+            }
+            catch (PersistenceException e)
             {
-                resolvedActors.add(findOrPersist(em, Actor.class, "apiId", actor.getApiId(), actor));
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw new DatabaseException("Create Movie failed", DatabaseErrorType.TRANSACTION_FAILURE, e);
             }
-
-            if (movie.getDirector() != null)
+            catch (RuntimeException e)
             {
-                Director d = movie.getDirector();
-                Director resolved = findOrPersist(em, Director.class, "apiId", d.getApiId(), d);
-                movie.setDirector(resolved);
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw new DatabaseException("Create Movie failed", DatabaseErrorType.UNKNOWN, e);
             }
-
-            movie.setActors(resolvedActors);
-            movie.setGenres(resolvedGenres);
-
-            em.persist(movie);
-            em.getTransaction().commit();
-            return movie;
         }
     }
 
-    private <T> T findOrPersist(EntityManager em, Class<T> clazz, String field, Object value, T newEntity)
+    private <T> T findOrPersistOnApiId(EntityManager em, Class<T> clazz, Long id, T newEntity)
     {
-        return em.createQuery("SELECT e FROM " + clazz.getSimpleName() + " e WHERE e." + field + " = :val", clazz)
-                .setParameter("val", value)
-                .getResultStream()
-                .findFirst()
-                .orElseGet(() ->
-                {
-                    em.persist(newEntity);
-                    return newEntity;
-                });
+        try
+        {
+            return em.createQuery("SELECT e FROM " + clazz.getSimpleName() + " e WHERE e." + "apiId" + " = :id", clazz)
+                    .setParameter("id", id)
+                    .getResultStream()
+                    .findFirst()
+                    .orElseGet(() ->
+                    {
+                        em.persist(newEntity);
+                        return newEntity;
+                    });
+        }
+        catch (PersistenceException e)
+        {
+            throw new DatabaseException("FindOrPersist " + clazz.getSimpleName() + " failed", DatabaseErrorType.TRANSACTION_FAILURE, e);
+        }
+        catch (RuntimeException e)
+        {
+            throw new DatabaseException("FindOrPersist " + clazz.getSimpleName() + " failed", DatabaseErrorType.UNKNOWN, e);
+        }
+    }
+
+    @Override
+    public List<Movie> getByGenre(String genre)
+    {
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m JOIN m.genres g WHERE g.name ILIKE :genre", Movie.class)
+                    .setParameter("genre", "%" + genre + "%");
+            return query.getResultList();
+        }
+        catch (PersistenceException e)
+        {
+            throw new DatabaseException("Get movies by genre failed", DatabaseErrorType.QUERY_FAILURE, e);
+        }
+    }
+
+    @Override
+    public List<Movie> getByTitle(String stringQuery)
+    {
+        try (EntityManager em = emf.createEntityManager())
+        {
+            TypedQuery<Movie> query = em.createQuery("SELECT m FROM Movie m WHERE m.title ILIKE :stringQuery", Movie.class)
+                    .setParameter("stringQuery", "%" + stringQuery + "%");
+            return query.getResultList();
+        }
+        catch (PersistenceException e)
+        {
+            throw new DatabaseException("Get movies by genre failed", DatabaseErrorType.QUERY_FAILURE, e);
+        }
+    }
+
+    @Override
+    public List<Movie> getAverageRating()
+    {
+        return List.of();
+    }
+
+    @Override
+    public List<Movie> getTopRated(int limit)
+    {
+        return List.of();
+    }
+
+    @Override
+    public List<Movie> getLowestRated(int limit)
+    {
+        return List.of();
+    }
+
+    @Override
+    public List<Movie> getMostPopular(int limit)
+    {
+        return List.of();
     }
 }
