@@ -1,4 +1,4 @@
-package app.daos.interfaces;
+package app.persistence.daos.interfaces;
 
 import app.entities.Movie;
 

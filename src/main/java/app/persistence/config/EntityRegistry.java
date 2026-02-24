@@ -1,4 +1,4 @@
-package app.config;
+package app.persistence.config;
 
 import app.entities.*;
 import org.hibernate.cfg.Configuration;

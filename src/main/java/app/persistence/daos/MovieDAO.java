@@ -1,6 +1,6 @@
-package app.daos;
+package app.persistence.daos;
 
-import app.daos.interfaces.IMovieDAO;
+import app.persistence.daos.interfaces.IMovieDAO;
 import app.entities.Actor;
 import app.entities.Director;
 import app.entities.Genre;

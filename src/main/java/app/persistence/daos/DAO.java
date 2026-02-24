@@ -1,6 +1,6 @@
-package app.daos;
+package app.persistence.daos;
 
-import app.daos.interfaces.IDAO;
+import app.persistence.daos.interfaces.IDAO;
 import app.exceptions.DatabaseErrorType;
 import app.exceptions.DatabaseException;
 import jakarta.persistence.EntityManager;

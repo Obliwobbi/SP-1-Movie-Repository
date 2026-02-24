@@ -1,8 +1,8 @@
 package app;
 
-import app.config.HibernateConfig;
-import app.daos.MovieDAO;
-import app.dto.*;
+import app.persistence.config.HibernateConfig;
+import app.persistence.daos.DAO;
+import app.persistence.daos.MovieDAO;
 import app.entities.Movie;
 import app.services.MovieService;
 import app.utils.APIReader;

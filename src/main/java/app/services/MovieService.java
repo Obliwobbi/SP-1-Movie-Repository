@@ -1,7 +1,7 @@
 package app.services;
 
 import app.MovieListDTO;
-import app.daos.MovieDAO;
+import app.persistence.daos.MovieDAO;
 import app.dto.*;
 import app.entities.Actor;
 import app.entities.Director;
