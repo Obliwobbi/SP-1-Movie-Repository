@@ -6,6 +6,8 @@ import java.util.List;
 
 public interface IMovieDAO
 {
+    Movie createAndMerge(Movie movie);
+
     List<Movie> getByGenre(String genre);
     List<Movie> getByTitle(String query);
     double getAverageRating();

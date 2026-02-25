@@ -31,7 +31,7 @@ public class Movie
     private Director director;
 
     //Mange til mange (join table) - Movie owns this side
-    @ManyToMany()
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "movie_actor",
             joinColumns = @JoinColumn(name = "movie_dbId"),
