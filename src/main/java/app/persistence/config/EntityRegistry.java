@@ -17,6 +17,7 @@ final class EntityRegistry
         configuration.addAnnotatedClass(Actor.class);
         configuration.addAnnotatedClass(Genre.class);
         configuration.addAnnotatedClass(Director.class);
+        configuration.addAnnotatedClass(MovieActor.class);
         //configuration.addAnnotatedClass(User.class);
     }
 }
