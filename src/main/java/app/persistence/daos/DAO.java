@@ -79,7 +79,7 @@ public class DAO<T> implements IDAO<T>
         try (EntityManager em = emf.createEntityManager())
         {
             return em.createQuery("SELECT e FROM " + entityClass.getSimpleName() + " e", entityClass)
-                     .getResultList();
+                    .getResultList();
         }
         catch (PersistenceException e)
         {

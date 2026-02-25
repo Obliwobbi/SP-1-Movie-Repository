@@ -57,7 +57,6 @@ public class Movie
     @Column(nullable = false)
     private LocalDate releaseDate;
 
-
     public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<Actor> actors)
     {
         this.apiId = apiId;
