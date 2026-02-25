@@ -1,10 +1,7 @@
 package app.services;
 
 import app.dto.*;
-import app.entities.Actor;
-import app.entities.Director;
-import app.entities.Genre;
-import app.entities.Movie;
+import app.entities.*;
 import app.persistence.daos.interfaces.IMovieDAO;
 import app.utils.APIReader;
 
@@ -108,14 +105,6 @@ public class MovieServiceImpl implements MovieService
     }
 
     @Override
-    public MovieDetailsDTO getMovieDetails(Long id)
-    {
-        String endpointDetails = "https://api.themoviedb.org/3/movie/%d?append_to_response=credits&language=en-US&api_key=%s";
-        String endpoint = String.format(Locale.US, endpointDetails, id, API_KEY);
-        return apiReader.getAndConvertData(endpoint, MovieDetailsDTO.class);
-    }
-
-    @Override
     public List<MovieDTO> getMovieIds()
     {
         String endpoint = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&primary_release_date.gte=2020-01-08&primary_release_date.lte=2025-01-09&sort_by=primary_release_date.asc&with_origin_country=DK&with_original_language=da&api_key=%s";
@@ -131,6 +120,45 @@ public class MovieServiceImpl implements MovieService
             results.addAll(apiReader.getAndConvertDataList(pageEndpoint, MovieDTO.class));
         }
         return results;
+    }
+
+    private Movie movieDTOToEntity(MovieDetailsDTO details)
+    {
+        CrewDTO directorOne = details.getCredits().getCrewDTOList().stream().filter(c -> c.getJob().equals("Director")).findFirst().orElse(null);
+
+        Director director;
+        if (directorOne != null)
+        {
+            director = new Director(directorOne.getId(), directorOne.getName());
+        }
+        else
+        {
+            director = new Director((long) -1, "No Director Credited");
+        }
+
+        Set<Genre> genres = createGenreSet(details.getGenres());
+
+        Movie movie = new Movie();
+        movie.setApiId(details.getId());
+        movie.setTitle(details.getTitle());
+        movie.setRating(details.getRating());
+        movie.setPopularity(details.getPopularity());
+        movie.setReleaseDate(details.getReleaseDate());
+        movie.setDirector(director);
+        movie.setGenres(genres);
+
+        return movie;
+    }
+
+    public Set<Genre> createGenreSet(List<GenreDTO> genres)
+    {
+        Set<Genre> genreSet = new HashSet<>();
+        for (GenreDTO g : genres)
+        {
+            Genre g1 = new Genre(g.getId(), g.getName());
+            genreSet.add(g1);
+        }
+        return genreSet;
     }
 
 }

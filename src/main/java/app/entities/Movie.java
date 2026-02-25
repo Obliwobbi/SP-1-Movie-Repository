@@ -52,7 +52,7 @@ public class Movie
     @Column(nullable = false)
     private LocalDate releaseDate;
 
-    public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<Actor> actors)
+    public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<MovieActor> actors)
     {
         this.apiId = apiId;
         this.title = title;

@@ -17,7 +17,8 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
         super(emf, Movie.class);
     }
 
-    public Movie createAndMerge(Movie movie)
+    @Override
+    public Movie createAndMerge(Movie movie, List<MovieActor> movieActors)
     {
         try (EntityManager em = emf.createEntityManager())
         {
