@@ -1,10 +1,7 @@
 package app.persistence.daos;
 
+import app.entities.*;
 import app.persistence.daos.interfaces.IMovieDAO;
-import app.entities.Actor;
-import app.entities.Director;
-import app.entities.Genre;
-import app.entities.Movie;
 import app.exceptions.DatabaseErrorType;
 import app.exceptions.DatabaseException;
 import jakarta.persistence.*;
@@ -20,7 +17,8 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
         super(emf, Movie.class);
     }
 
-    public Movie createAndMerge(Movie movie)
+    @Override
+    public Movie createAndMerge(Movie movie, List<MovieActor> movieActors)
     {
         try (EntityManager em = emf.createEntityManager())
         {
@@ -32,12 +30,7 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
                 {
                     resolvedGenres.add(findOrPersistOnApiId(em, Genre.class, genre.getApiId(), genre));
                 }
-
-                Set<Actor> resolvedActors = new HashSet<>();
-                for (Actor actor : movie.getActors())
-                {
-                    resolvedActors.add(findOrPersistOnApiId(em, Actor.class, actor.getApiId(), actor));
-                }
+                movie.setGenres(resolvedGenres);
 
                 if (movie.getDirector() != null)
                 {
@@ -46,10 +39,15 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
                     movie.setDirector(resolved);
                 }
 
-                movie.setActors(resolvedActors);
-                movie.setGenres(resolvedGenres);
-
                 em.persist(movie);
+
+                for (MovieActor movieActor : movieActors)
+                {
+                    Actor resolved = findOrPersistOnApiId(em, Actor.class, movieActor.getActor().getApiId(), movieActor.getActor());
+                    movieActor.setActor(resolved);
+                    em.persist(movieActor);
+                }
+
                 em.getTransaction().commit();
                 return movie;
             }

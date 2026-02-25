@@ -3,9 +3,11 @@ package app.entities;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Set;
+
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor()
 @AllArgsConstructor
 @Builder
 @Entity
@@ -21,4 +23,7 @@ public class Actor
 
     @Column(nullable = false)
     private String name;
+
+    @OneToMany(mappedBy = "actor")
+    Set<MovieActor> movieActors;
 }

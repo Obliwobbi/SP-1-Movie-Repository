@@ -33,8 +33,4 @@ public class Director
         this.name = name;
     }
 
-    public Director(String name)
-    {
-        this.name = name;
-    }
 }

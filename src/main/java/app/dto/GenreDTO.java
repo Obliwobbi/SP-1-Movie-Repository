@@ -14,11 +14,3 @@ public class GenreDTO
     @JsonProperty("name")
     private String name;
 }
-
-
-// "genres": [
-//    {
-//      "id": 35,
-//      "name": "Comedy"
-//    },
-//    {

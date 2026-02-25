@@ -4,7 +4,9 @@ import app.persistence.config.HibernateConfig;
 import app.persistence.daos.DAO;
 import app.persistence.daos.MovieDAO;
 import app.entities.Movie;
+import app.persistence.daos.interfaces.IMovieDAO;
 import app.services.MovieService;
+import app.services.MovieServiceImpl;
 import app.utils.APIReader;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManagerFactory;
@@ -20,8 +22,10 @@ public class Main
         ObjectMapper objectMapper = new ObjectMapper();
         APIReader apiReader = new APIReader(objectMapper);
 
-        MovieDAO movieDAO = new MovieDAO(emf);
-        MovieService ms = new MovieService(apiReader, movieDAO);
+        IMovieDAO movieDAO = new MovieDAO(emf);
+        MovieService ms = new MovieServiceImpl(apiReader, movieDAO);
+
+//        ms.fetchAndSaveToDB();
 
         System.out.println("Top Ten");
         List<Movie> topTenRated = ms.getTopRated();
@@ -39,6 +43,7 @@ public class Main
         System.out.println();
 
         System.out.println("Average rating: "+ms.getAvgRating());
+        System.out.println();
 
         System.out.println("Get by genre: action");
         List<Movie> byGenreAction = ms.getByGenre("action");

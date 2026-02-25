@@ -8,7 +8,7 @@ import java.util.Set;
 
 @Getter
 @Setter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor()
 @AllArgsConstructor
 @Builder
 @Entity
@@ -30,14 +30,9 @@ public class Movie
     @JoinColumn(name = "director_dbId")
     private Director director;
 
-    //Mange til mange (join table) - Movie owns this side
-    @ManyToMany()
-    @JoinTable(
-            name = "movie_actor",
-            joinColumns = @JoinColumn(name = "movie_dbId"),
-            inverseJoinColumns = @JoinColumn(name = "actor_dbId")
-    )
-    private Set<Actor> actors;
+    //En til mange (join table) - Movie owns this side
+    @OneToMany(mappedBy = "movie")
+    private Set<MovieActor> actors;
 
     //Mange til mange (join table) - Movie owns this side
     @ManyToMany(fetch = FetchType.EAGER)
@@ -57,8 +52,7 @@ public class Movie
     @Column(nullable = false)
     private LocalDate releaseDate;
 
-
-    public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<Actor> actors)
+    public Movie(Long apiId, String title, Director director, Double rating, LocalDate releaseDate, double popularity, Set<Genre> genres, Set<MovieActor> actors)
     {
         this.apiId = apiId;
         this.title = title;
