@@ -33,13 +33,15 @@ public class Main
         //        System.out.println("Sequential took: " + seconds + " seconds");
 
 
-        long start = System.nanoTime();
+//        long start = System.nanoTime();
+//
+//        ms.fetchAndSaveToDBMultithreaded(10);
+//
+//        double seconds = (System.nanoTime() - start) / 1_000_000_000.0;
+//        System.out.println("Multithreaded took: " + seconds + " seconds");
 
-        ms.fetchAndSaveToDBMultithreaded(10);
 
-        double seconds = (System.nanoTime() - start) / 1_000_000_000.0;
-        System.out.println("Multithreaded took: " + seconds + " seconds");
-
+        ms.syncWithAPI();
 
         //        System.out.println("Top Ten");
         //        List<Movie> topTenRated = ms.getTopRated();

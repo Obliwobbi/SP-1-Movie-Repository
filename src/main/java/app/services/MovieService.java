@@ -27,4 +27,6 @@ public interface MovieService
     void fetchAndSaveToDB();
 
     void fetchAndSaveToDBMultithreaded(int threads);
+
+    void syncWithAPI();
 }

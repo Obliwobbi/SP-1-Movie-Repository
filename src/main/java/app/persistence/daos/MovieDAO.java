@@ -172,4 +172,59 @@ public class MovieDAO extends DAO<Movie> implements IMovieDAO
             return query.getResultList();
         }
     }
+
+    @Override
+    public List<Long> getAllApiIds()
+    {
+        try (EntityManager em = emf.createEntityManager())
+        {
+            return em.createQuery("SELECT m.apiId FROM Movie m", Long.class)
+                    .getResultList();
+        }
+    }
+
+    @Override
+    public void deleteByApiId(Long apiId)
+    {
+        try (EntityManager em = emf.createEntityManager())
+        {
+            em.getTransaction().begin();
+            try
+            {
+                //find the movie
+                Movie movie = em.createQuery("SELECT m FROM Movie m WHERE m.apiId = :apiId", Movie.class)
+                        .setParameter("apiId", apiId)
+                        .getSingleResult();
+
+                //delete all MovieActor relations
+                em.createQuery("DELETE FROM MovieActor ma WHERE ma.movie.dbId = :movieId")
+                        .setParameter("movieId", movie.getDbId())
+                        .executeUpdate();
+
+                //clear relations with genres
+                movie.getGenres().clear();
+                em.merge(movie);
+
+                em.remove(movie);
+
+                em.getTransaction().commit();
+            }
+            catch (NoResultException e)
+            {
+                em.getTransaction().rollback();
+                throw new DatabaseException("Movie with apiId " + apiId + " not found", DatabaseErrorType.NOT_FOUND, e);
+            }
+            catch (PersistenceException e)
+            {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw new DatabaseException("deleteByApiId failed", DatabaseErrorType.TRANSACTION_FAILURE, e);
+            }
+            catch (RuntimeException e)
+            {
+                if (em.getTransaction().isActive()) em.getTransaction().rollback();
+                throw new DatabaseException("deleteByApiId failed", DatabaseErrorType.UNKNOWN, e);
+            }
+        }
+    }
+
 }

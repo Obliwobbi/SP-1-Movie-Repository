@@ -162,7 +162,12 @@ public class MovieServiceImpl implements MovieService
     public List<MovieDTO> getMovieIds()
     {
         String endpoint = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&primary_release_date.gte=2020-01-08&primary_release_date.lte=2025-01-09&sort_by=primary_release_date.asc&with_origin_country=DK&with_original_language=da&api_key=%s";
-        String formatted = String.format(Locale.US, endpoint, API_KEY);
+//        String formatted = String.format(Locale.US, endpoint, API_KEY);
+
+        //removed danish language from query, gives more movies
+        String syncTest = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&primary_release_date.gte=2020-01-08&primary_release_date.lte=2025-01-09&sort_by=primary_release_date.asc&with_origin_country=DK&&api_key=%s";
+        String formatted = String.format(Locale.US, syncTest, API_KEY);
+
         MovieListDTO listSize = apiReader.getAndConvertData(formatted, MovieListDTO.class);
 
         int pages = listSize.getTotalPages();
@@ -213,5 +218,38 @@ public class MovieServiceImpl implements MovieService
             genreSet.add(g1);
         }
         return genreSet;
+    }
+
+    @Override
+    public void syncWithAPI()
+    {
+        List<Long> apiIds = getMovieIds().stream()
+                .map(MovieDTO::getId)
+                .toList();
+
+        List<Long> dbIds = movieDAO.getAllApiIds();
+
+        List<Long> toAdd = apiIds.stream()
+                .filter(id -> !dbIds.contains(id))
+                .toList();
+
+        List<Long> toRemove = dbIds.stream()
+                .filter(id -> !apiIds.contains(id))
+                .toList();
+
+        for (Long id : toAdd)
+        {
+            MovieDetailsDTO details = getMovieDetails(id);
+            Movie movie = movieDTOToEntity(details);
+            List<MovieActor> movieActors = actorDTOToEntity(details, movie);
+            movieDAO.createAndMerge(movie, movieActors);
+        }
+
+        for (Long id : toRemove)
+        {
+            movieDAO.deleteByApiId(id);
+        }
+
+        System.out.println("Sync complete. Added: " + toAdd.size() + ", Removed: " + toRemove.size());
     }
 }
