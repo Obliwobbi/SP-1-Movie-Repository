@@ -25,35 +25,49 @@ public class Main
         IMovieDAO movieDAO = new MovieDAO(emf);
         MovieService ms = new MovieServiceImpl(apiReader, movieDAO);
 
-//        ms.fetchAndSaveToDB();
+        //        long start = System.nanoTime();
+        //
+        //        ms.fetchAndSaveToDB();
+        //
+        //         double seconds = (System.nanoTime() - start) / 1_000_000_000.0;
+        //        System.out.println("Sequential took: " + seconds + " seconds");
 
-        System.out.println("Top Ten");
-        List<Movie> topTenRated = ms.getTopRated();
-        topTenRated.forEach(movie -> System.out.println(movie.getTitle()));
-        System.out.println();
 
-        System.out.println("Lowest ten");
-        List<Movie> lowestTenRated = ms.getLowestRated();
-        lowestTenRated.forEach(movie -> System.out.println(movie.getTitle()));
-        System.out.println();
+        long start = System.nanoTime();
 
-        System.out.println("Most popular");
-        List<Movie> mostPopular = ms.getMostPopular();
-        mostPopular.forEach(movie -> System.out.println(movie.getTitle()));
-        System.out.println();
+        ms.fetchAndSaveToDBMultithreaded(10);
 
-        System.out.println("Average rating: "+ms.getAvgRating());
-        System.out.println();
+        double seconds = (System.nanoTime() - start) / 1_000_000_000.0;
+        System.out.println("Multithreaded took: " + seconds + " seconds");
 
-        System.out.println("Get by genre: action");
-        List<Movie> byGenreAction = ms.getByGenre("action");
-        byGenreAction.forEach(movie -> System.out.println(movie.getTitle()));
-        System.out.println();
 
-        System.out.println("Get by title: thomas");
-        List<Movie> byTitleThomas = ms.getByTitle("thomas");
-        byTitleThomas.forEach(movie -> System.out.println(movie.getTitle()));
-        System.out.println();
+        //        System.out.println("Top Ten");
+        //        List<Movie> topTenRated = ms.getTopRated();
+        //        topTenRated.forEach(movie -> System.out.println(movie.getTitle()));
+        //        System.out.println();
+        //
+        //        System.out.println("Lowest ten");
+        //        List<Movie> lowestTenRated = ms.getLowestRated();
+        //        lowestTenRated.forEach(movie -> System.out.println(movie.getTitle()));
+        //        System.out.println();
+        //
+        //        System.out.println("Most popular");
+        //        List<Movie> mostPopular = ms.getMostPopular();
+        //        mostPopular.forEach(movie -> System.out.println(movie.getTitle()));
+        //        System.out.println();
+        //
+        //        System.out.println("Average rating: "+ms.getAvgRating());
+        //        System.out.println();
+        //
+        //        System.out.println("Get by genre: action");
+        //        List<Movie> byGenreAction = ms.getByGenre("action");
+        //        byGenreAction.forEach(movie -> System.out.println(movie.getTitle()));
+        //        System.out.println();
+        //
+        //        System.out.println("Get by title: thomas");
+        //        List<Movie> byTitleThomas = ms.getByTitle("thomas");
+        //        byTitleThomas.forEach(movie -> System.out.println(movie.getTitle()));
+        //        System.out.println();
 
     }
 }

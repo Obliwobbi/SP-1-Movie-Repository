@@ -5,9 +5,8 @@ import app.entities.*;
 import app.persistence.daos.interfaces.IMovieDAO;
 import app.utils.APIReader;
 
-import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
 
 public class MovieServiceImpl implements MovieService
 {
@@ -66,14 +65,28 @@ public class MovieServiceImpl implements MovieService
         {
             {
                 MovieDetailsDTO details = getMovieDetails(m.getId());
-
                 Movie movie = movieDTOToEntity(details);
                 List<MovieActor> movieActors = actorDTOToEntity(details, movie);
-
                 movieDAO.createAndMerge(movie, movieActors);
                 i++;
                 System.out.println(i);
             }
+        }
+    }
+
+    @Override
+    public void fetchAndSaveToDBMultithreaded(int threads)
+    {
+        List<MovieDTO> movieIds = getMovieIds();
+
+        List<MovieDetailsDTO> detailsList = fetchMovieDetailsMultithreaded(movieIds, threads);
+
+        for (MovieDetailsDTO details : detailsList)
+        {
+            Movie movie = movieDTOToEntity(details);
+            List<MovieActor> movieActors = actorDTOToEntity(details, movie);
+
+            movieDAO.createAndMerge(movie, movieActors);
         }
     }
 
@@ -102,6 +115,47 @@ public class MovieServiceImpl implements MovieService
         String endpointDetails = "https://api.themoviedb.org/3/movie/%d?append_to_response=credits&language=en-US&api_key=%s";
         String endpoint = String.format(Locale.US, endpointDetails, id, API_KEY);
         return apiReader.getAndConvertData(endpoint, MovieDetailsDTO.class);
+    }
+
+    public List<MovieDetailsDTO> fetchMovieDetailsMultithreaded(List<MovieDTO> movieDtoList, int threads)
+    {
+        List<MovieDetailsDTO> results = new ArrayList<>();
+
+        List<Callable<MovieDetailsDTO>> tasks = new ArrayList<>();
+
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        for (MovieDTO movie : movieDtoList)
+        {
+            tasks.add(() -> getMovieDetails(movie.getId()));
+        }
+        try
+        {
+            List<Future<MovieDetailsDTO>> futures = executor.invokeAll(tasks);
+
+            for (Future<MovieDetailsDTO> future : futures)
+            {
+                try
+                {
+                    results.add(future.get());
+                }
+                catch (ExecutionException e)
+                {
+                    System.out.println("Task failed: " + e.getCause().getMessage());
+                }
+            }
+
+            executor.shutdown();
+
+            return results;
+        }
+        catch (InterruptedException e)
+        {
+            System.out.println("Thread interrupted: " + e.getMessage());
+            Thread.currentThread().interrupt();
+
+            return results;
+        }
     }
 
     @Override
@@ -160,5 +214,4 @@ public class MovieServiceImpl implements MovieService
         }
         return genreSet;
     }
-
 }
