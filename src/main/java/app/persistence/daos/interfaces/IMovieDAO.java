@@ -20,4 +20,8 @@ public interface IMovieDAO
     List<Movie> getLowestRated(int limit);
 
     List<Movie> getMostPopular(int limit);
+
+    List<Long> getAllApiIds();
+
+    void deleteByApiId(Long apiId);
 }

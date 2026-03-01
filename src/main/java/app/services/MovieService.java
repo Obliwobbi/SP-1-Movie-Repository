@@ -25,4 +25,8 @@ public interface MovieService
     List<MovieDTO> getMovieIds();
 
     void fetchAndSaveToDB();
+
+    void fetchAndSaveToDBMultithreaded(int threads);
+
+    void syncWithAPI();
 }

@@ -5,9 +5,8 @@ import app.entities.*;
 import app.persistence.daos.interfaces.IMovieDAO;
 import app.utils.APIReader;
 
-import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.*;
 
 public class MovieServiceImpl implements MovieService
 {
@@ -66,14 +65,28 @@ public class MovieServiceImpl implements MovieService
         {
             {
                 MovieDetailsDTO details = getMovieDetails(m.getId());
-
                 Movie movie = movieDTOToEntity(details);
                 List<MovieActor> movieActors = actorDTOToEntity(details, movie);
-
                 movieDAO.createAndMerge(movie, movieActors);
                 i++;
                 System.out.println(i);
             }
+        }
+    }
+
+    @Override
+    public void fetchAndSaveToDBMultithreaded(int threads)
+    {
+        List<MovieDTO> movieIds = getMovieIds();
+
+        List<MovieDetailsDTO> detailsList = fetchMovieDetailsMultithreaded(movieIds, threads);
+
+        for (MovieDetailsDTO details : detailsList)
+        {
+            Movie movie = movieDTOToEntity(details);
+            List<MovieActor> movieActors = actorDTOToEntity(details, movie);
+
+            movieDAO.createAndMerge(movie, movieActors);
         }
     }
 
@@ -104,11 +117,57 @@ public class MovieServiceImpl implements MovieService
         return apiReader.getAndConvertData(endpoint, MovieDetailsDTO.class);
     }
 
+    public List<MovieDetailsDTO> fetchMovieDetailsMultithreaded(List<MovieDTO> movieDtoList, int threads)
+    {
+        List<MovieDetailsDTO> results = new ArrayList<>();
+
+        List<Callable<MovieDetailsDTO>> tasks = new ArrayList<>();
+
+        ExecutorService executor = Executors.newFixedThreadPool(threads);
+
+        for (MovieDTO movie : movieDtoList)
+        {
+            tasks.add(() -> getMovieDetails(movie.getId()));
+        }
+        try
+        {
+            List<Future<MovieDetailsDTO>> futures = executor.invokeAll(tasks);
+
+            for (Future<MovieDetailsDTO> future : futures)
+            {
+                try
+                {
+                    results.add(future.get());
+                }
+                catch (ExecutionException e)
+                {
+                    System.out.println("Task failed: " + e.getCause().getMessage());
+                }
+            }
+
+            executor.shutdown();
+
+            return results;
+        }
+        catch (InterruptedException e)
+        {
+            System.out.println("Thread interrupted: " + e.getMessage());
+            Thread.currentThread().interrupt();
+
+            return results;
+        }
+    }
+
     @Override
     public List<MovieDTO> getMovieIds()
     {
         String endpoint = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&primary_release_date.gte=2020-01-08&primary_release_date.lte=2025-01-09&sort_by=primary_release_date.asc&with_origin_country=DK&with_original_language=da&api_key=%s";
-        String formatted = String.format(Locale.US, endpoint, API_KEY);
+//        String formatted = String.format(Locale.US, endpoint, API_KEY);
+
+        //removed danish language from query, gives more movies
+        String syncTest = "https://api.themoviedb.org/3/discover/movie?include_adult=false&include_video=false&language=en-US&primary_release_date.gte=2020-01-08&primary_release_date.lte=2025-01-09&sort_by=primary_release_date.asc&with_origin_country=DK&&api_key=%s";
+        String formatted = String.format(Locale.US, syncTest, API_KEY);
+
         MovieListDTO listSize = apiReader.getAndConvertData(formatted, MovieListDTO.class);
 
         int pages = listSize.getTotalPages();
@@ -161,4 +220,36 @@ public class MovieServiceImpl implements MovieService
         return genreSet;
     }
 
+    @Override
+    public void syncWithAPI()
+    {
+        List<Long> apiIds = getMovieIds().stream()
+                .map(MovieDTO::getId)
+                .toList();
+
+        List<Long> dbIds = movieDAO.getAllApiIds();
+
+        List<Long> toAdd = apiIds.stream()
+                .filter(id -> !dbIds.contains(id))
+                .toList();
+
+        List<Long> toRemove = dbIds.stream()
+                .filter(id -> !apiIds.contains(id))
+                .toList();
+
+        for (Long id : toAdd)
+        {
+            MovieDetailsDTO details = getMovieDetails(id);
+            Movie movie = movieDTOToEntity(details);
+            List<MovieActor> movieActors = actorDTOToEntity(details, movie);
+            movieDAO.createAndMerge(movie, movieActors);
+        }
+
+        for (Long id : toRemove)
+        {
+            movieDAO.deleteByApiId(id);
+        }
+
+        System.out.println("Sync complete. Added: " + toAdd.size() + ", Removed: " + toRemove.size());
+    }
 }
